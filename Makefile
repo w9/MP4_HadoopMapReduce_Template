@@ -1,6 +1,10 @@
 .PHNOY: main
 main: package test-b
 
+.PHONY: gitacp
+gitacp:
+	git add . -A && git commit -am '.' && git push
+
 .PHONY: package
 package:
 	cd mp4 && make

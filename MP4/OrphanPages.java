@@ -47,6 +47,7 @@ public class OrphanPages extends Configured implements Tool {
     public static class LinkCountMap extends Mapper<Object, Text, IntWritable, IntWritable> {
         @Override
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
+            value.toString().split(": ")
             // TODO
             // context.write(<IntWritable>, <IntWritable>); // pass this output to reducer
         }
