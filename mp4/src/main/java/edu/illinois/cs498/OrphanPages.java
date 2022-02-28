@@ -47,9 +47,18 @@ public class OrphanPages extends Configured implements Tool {
     public static class LinkCountMap extends Mapper<Object, Text, IntWritable, IntWritable> {
         @Override
         public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
-            value.toString().split(": ")
-            // TODO
-            // context.write(<IntWritable>, <IntWritable>); // pass this output to reducer
+            String[] sourceAndTargets = value.toString().split(": ", 2);
+            Integer source = Integer.parseInt(sourceAndTargets[0]);
+            String targetsStr = sourceAndTargets[1];
+            String[] targets = targetsStr.split(" ");
+
+            context.write(new IntWritable(source), new IntWritable(0));
+            for (String targetStr : targets) {
+                Integer target = Integer.parseInt(targetStr);
+                if (target != source) {
+                    context.write(new IntWritable(target), new IntWritable(1));
+                }
+            }
         }
     }
 
@@ -57,8 +66,14 @@ public class OrphanPages extends Configured implements Tool {
         @Override
         public void reduce(IntWritable key, Iterable<IntWritable> values, Context context)
                 throws IOException, InterruptedException {
-            // TODO
-            // context.write(<IntWritable>, <NullWritable>); // print as final output
+            int count = 0;
+            for (IntWritable value : values) {
+                count += value.get();
+            }
+
+            if (count == 0) {
+                context.write(key, NullWritable.get());
+            }
         }
     }
 }

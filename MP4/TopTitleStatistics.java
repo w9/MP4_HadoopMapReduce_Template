@@ -196,7 +196,7 @@ public class TopTitleStatistics extends Configured implements Tool {
                 Integer count = Integer.parseInt(pair[1].toString());
 
                 countToWordMap.add(new Pair<Integer, String>(count, word));
-                if (countToWordMap.size() > 5) {
+                if (countToWordMap.size() > 10) {
                     countToWordMap.remove(countToWordMap.first());
                 }
             }
