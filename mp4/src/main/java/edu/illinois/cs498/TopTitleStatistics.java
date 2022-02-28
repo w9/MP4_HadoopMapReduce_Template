@@ -22,15 +22,17 @@ import org.apache.hadoop.util.ToolRunner;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.Integer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 
-public class TopTitles extends Configured implements Tool {
+public class TopTitleStatistics extends Configured implements Tool {
+    public static final Log LOG = LogFactory.getLog(TopTitleStatistics.class);
 
     public static void main(String[] args) throws Exception {
-        int res = ToolRunner.run(new Configuration(), new TopTitles(), args);
+        int res = ToolRunner.run(new Configuration(), new TopTitleStatistics(), args);
         System.exit(res);
     }
 
@@ -51,18 +53,18 @@ public class TopTitles extends Configured implements Tool {
         FileInputFormat.setInputPaths(jobA, new Path(args[0]));
         FileOutputFormat.setOutputPath(jobA, tmpPath);
 
-        jobA.setJarByClass(TopTitles.class);
+        jobA.setJarByClass(TopTitleStatistics.class);
         jobA.waitForCompletion(true);
 
-        Job jobB = Job.getInstance(conf, "Top Titles");
+        Job jobB = Job.getInstance(conf, "Top Titles Statistics");
         jobB.setOutputKeyClass(Text.class);
         jobB.setOutputValueClass(IntWritable.class);
 
         jobB.setMapOutputKeyClass(NullWritable.class);
         jobB.setMapOutputValueClass(TextArrayWritable.class);
 
-        jobB.setMapperClass(TopTitlesMap.class);
-        jobB.setReducerClass(TopTitlesReduce.class);
+        jobB.setMapperClass(TopTitlesStatMap.class);
+        jobB.setReducerClass(TopTitlesStatReduce.class);
         jobB.setNumReduceTasks(1);
 
         FileInputFormat.setInputPaths(jobB, tmpPath);
@@ -71,7 +73,7 @@ public class TopTitles extends Configured implements Tool {
         jobB.setInputFormatClass(KeyValueTextInputFormat.class);
         jobB.setOutputFormatClass(TextOutputFormat.class);
 
-        jobB.setJarByClass(TopTitles.class);
+        jobB.setJarByClass(TopTitleStatistics.class);
         return jobB.waitForCompletion(true) ? 0 : 1;
     }
 
@@ -126,8 +128,8 @@ public class TopTitles extends Configured implements Tool {
             String line = value.toString();
             StringTokenizer tokenizer = new StringTokenizer(line, delimiters);
             while (tokenizer.hasMoreTokens()) {
-                String nextToken = tokenizer.nextToken();
-                if (!stopWords.contains(nextToken.trim().toLowerCase())) {
+                String nextToken = tokenizer.nextToken().trim().toLowerCase();
+                if (!stopWords.contains(nextToken)) {
                     context.write(new Text(nextToken), new IntWritable(1));
                 }
             }
@@ -146,7 +148,7 @@ public class TopTitles extends Configured implements Tool {
         }
     }
 
-    public static class TopTitlesMap extends Mapper<Text, Text, NullWritable, TextArrayWritable> {
+    public static class TopTitlesStatMap extends Mapper<Text, Text, NullWritable, TextArrayWritable> {
         private TreeSet<Pair<Integer, String>> countToWordMap = new TreeSet<Pair<Integer, String>>();
 
         @Override
@@ -175,7 +177,7 @@ public class TopTitles extends Configured implements Tool {
         }
     }
 
-    public static class TopTitlesReduce extends Reducer<NullWritable, TextArrayWritable, Text, IntWritable> {
+    public static class TopTitlesStatReduce extends Reducer<NullWritable, TextArrayWritable, Text, IntWritable> {
         private TreeSet<Pair<Integer, String>> countToWordMap = new TreeSet<Pair<Integer, String>>();
 
         @Override
@@ -186,6 +188,8 @@ public class TopTitles extends Configured implements Tool {
         @Override
         public void reduce(NullWritable key, Iterable<TextArrayWritable> values, Context context)
                 throws IOException, InterruptedException {
+            Integer sum, mean, max, min, var;
+
             for (TextArrayWritable val : values) {
                 Text[] pair = (Text[]) val.toArray();
                 String word = pair[0].toString();
@@ -197,13 +201,31 @@ public class TopTitles extends Configured implements Tool {
                 }
             }
 
+            int n = countToWordMap.size();
+            sum = 0;
+            min = countToWordMap.first().first;
+            max = countToWordMap.last().first;
             for (Pair<Integer, String> item : countToWordMap) {
-                Text word = new Text(item.second);
-                IntWritable value = new IntWritable(item.first);
-                context.write(word, value);
+                sum += item.first;
             }
+            mean = sum / n;
+
+            Integer error;
+            error = 0;
+            for (Pair<Integer, String> item : countToWordMap) {
+                Integer delta = item.first - mean;
+                error += delta * delta;
+            }
+            var = error / n;
+
+            context.write(new Text("Mean"), new IntWritable(mean));
+            context.write(new Text("Sum"), new IntWritable(sum));
+            context.write(new Text("Min"), new IntWritable(min));
+            context.write(new Text("Max"), new IntWritable(max));
+            context.write(new Text("Var"), new IntWritable(var));
         }
     }
+
 }
 
 class Pair<A extends Comparable<? super A>, B extends Comparable<? super B>>

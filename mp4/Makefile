@@ -1,3 +1,3 @@
 .PHONY: main
 main:
-	mvn package
+	mvn clean package
