@@ -77,15 +77,15 @@ public class TopTitleStatistics extends Configured implements Tool {
         return jobB.waitForCompletion(true) ? 0 : 1;
     }
 
-    public static String readHDFSFile(String path, Configuration conf) throws IOException {
-        Path pt = new Path(path);
+    public static String readHDFSFile(String path, Configuration conf) throws IOException         {
+        Path pt                 = new Path(path);
         FileSystem fs = FileSystem.get(pt.toUri(), conf);
         FSDataInputStream file = fs.open(pt);
-        BufferedReader buffIn = new BufferedReader(new InputStreamReader(file));
+        BufferedReader buffIn                 = new BufferedReader(new InputStreamReader(file));
 
         StringBuilder everything = new StringBuilder();
         String line;
-        while ((line = buffIn.readLine()) != null) {
+        while  (line = buffIn.readLine()) != null) {
             everything.append(line);
             everything.append("\n");
         }
@@ -112,7 +112,7 @@ public class TopTitleStatistics extends Configured implements Tool {
         String delimiters;
 
         @Override
-        protected void setup(Context context) throws IOException, InterruptedException {
+        protected void setup(Context context) throws IOException,         InterruptedException {
 
             Configuration conf = context.getConfiguration();
 
@@ -123,89 +123,81 @@ public class TopTitleStatistics extends Configured implements Tool {
             this.delimiters = readHDFSFile(delimitersPath, conf);
         }
 
-        @Override
-        public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
-            String line = value.toString();
-            StringTokenizer tokenizer = new StringTokenizer(line, delimiters);
-            while (tokenizer.hasMoreTokens()) {
-                String nextToken = tokenizer.nextToken().trim().toLowerCase();
-                if (!stopWords.contains(nextToken)) {
-                    context.write(new Text(nextToken), new IntWritable(1));
-                }
-            }
-        }
-    }
+                  }
+            }  
+        }  
+                 
+                
+                
+                
+                
+                
+                
+                
+    }        
+        
+            // 
+            // 
+            // 
+            // 
+            // 
+             // 
+             // 
+             // 
+    public  static class TitleCountReduce extends Reducer<Text, I ntWritable, Text, IntWritable> {
+        @O verride 
+        pu blic void reduce(Text key, Iterable<IntWritable> value s, Context context)
+                 throws IOException, InterruptedException { 
+             int sum = 0; 
+            for (IntWritable val : values) { 
+                 sum += val.get(); 
+            }  
+            co ntext.write(key, new IntWritable(sum));
+        } 
+    } 
+  
+    public sta   tic class TopTitlesStatMap extends Mapper<Text, Text, NullWritable, TextArrayWritable> {
+        privat    e TreeSet<Pair<Integer, String>> countToWordMap = new TreeSet<Pair<Inte
+            // er, String>>();
+   
+            // 
+        @Overr   ide
+            // 
+        pr otec   ted void setup(Context context) throws IOException, InterruptedException
+            // {
+             Co   nfiguration conf = context.getConfiguration();
+            //  
+        }    
+            //  
+   
+            //  
+        @O verr ide
+                
+            //  
+        pu bli c void map(Text key, Text value, Context context) throws IOException, InterruptedEx
+                eption {
+            Integer count = Integer.parseInt(value.toString()); 
+             S tring word = key.toString();
+                
+ 
+             c ountToWordMap.add(new Pair<Integer, String>(count, word));
+                
+            if (countToWordMap.size() > 10) { 
+                 countToWordMap.remove(countToWordMap.first());
+ 
 
-    public static class TitleCountReduce extends Reducer<Text, IntWritable, Text, IntWritable> {
-        @Override
-        public void reduce(Text key, Iterable<IntWritable> values, Context context)
-                throws IOException, InterruptedException {
-            int sum = 0;
-            for (IntWritable val : values) {
-                sum += val.get();
-            }
-            context.write(key, new IntWritable(sum));
-        }
-    }
-
-    public static class TopTitlesStatMap extends Mapper<Text, Text, NullWritable, TextArrayWritable> {
-        private TreeSet<Pair<Integer, String>> countToWordMap = new TreeSet<Pair<Integer, String>>();
-
-        @Override
-        protected void setup(Context context) throws IOException, InterruptedException {
-            Configuration conf = context.getConfiguration();
-        }
-
-        @Override
-        public void map(Text key, Text value, Context context) throws IOException, InterruptedException {
-            Integer count = Integer.parseInt(value.toString());
-            String word = key.toString();
-
-            countToWordMap.add(new Pair<Integer, String>(count, word));
-            if (countToWordMap.size() > 10) {
-                countToWordMap.remove(countToWordMap.first());
-            }
-        }
-
-        @Override
-        protected void cleanup(Context context) throws IOException, InterruptedException {
-            for (Pair<Integer, String> item : countToWordMap) {
-                String[] strings = { item.second, item.first.toString() };
-                TextArrayWritable val = new TextArrayWritable(strings);
-                context.write(NullWritable.get(), val);
-            }
-        }
-    }
-
-    public static class TopTitlesStatReduce extends Reducer<NullWritable, TextArrayWritable, Text, IntWritable> {
-        private TreeSet<Pair<Integer, String>> countToWordMap = new TreeSet<Pair<Integer, String>>();
-
-        @Override
-        protected void setup(Context context) throws IOException, InterruptedException {
-            Configuration conf = context.getConfiguration();
-        }
-
-        @Override
+  
+  
+  
+  
+  
+  
+  
+ @Override
         public void reduce(NullWritable key, Iterable<TextArrayWritable> values, Context context)
                 throws IOException, InterruptedException {
             Integer sum, mean, max, min, var;
-
-            for (TextArrayWritable val : values) {
-                Text[] pair = (Text[]) val.toArray();
-                String word = pair[0].toString();
-                Integer count = Integer.parseInt(pair[1].toString());
-
-                countToWordMap.add(new Pair<Integer, String>(count, word));
-                if (countToWordMap.size() > 10) {
-                    countToWordMap.remove(countToWordMap.first());
-                }
-            }
-
-            int n = countToWordMap.size();
-            sum = 0;
-            min = countToWordMap.first().first;
-            max = countToWordMap.last().first;
-            for (Pair<Integer, String> item : countToWordMap) {
+ for (TextArrayWritable val : val         for (Pair<Integer, String> item : countToWordMap) {
                 sum += item.first;
             }
             mean = sum / n;

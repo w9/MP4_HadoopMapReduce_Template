@@ -1,6 +1,17 @@
+.PHNOY: main
+main: package test-b
+
 .PHONY: package
 package:
 	cd mp4 && make
+
+.PHONY: test-b
+test-b:
+	hadoop fs -mkdir -p ./output \
+     && hadoop fs -rm -r ./output \
+     && hadoop jar ./mp4/target/mp4-1.0-SNAPSHOT.jar TopTitleStatistics -D stopwords=JavaTemplate/stopwords.txt -D delimiters=JavaTemplate/delimiters.txt JavaTemplate/dataset/titles ./output \
+     && hadoop fs -cat ./output/part* \
+     && hadoop fs -ls ./output
 
 .PHONY: test-a
 test-a:
