@@ -1,5 +1,5 @@
 .PHNOY: main
-main: package test-c
+main: package test-d
 
 .PHONY: gitacp
 gitacp:
@@ -8,6 +8,14 @@ gitacp:
 .PHONY: package
 package:
 	cd mp4 && make
+
+.PHONY: test-d
+test-d:
+	hadoop fs -mkdir -p ./output \
+     && hadoop fs -rm -r ./output \
+     && hadoop jar ./mp4/target/mp4-1.0-SNAPSHOT.jar TopPopularLinks JavaTemplate/dataset/links ./output \
+     && hadoop fs -cat ./output/part* \
+     && hadoop fs -ls ./output
 
 .PHONY: test-c
 test-c:

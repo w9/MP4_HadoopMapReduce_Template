@@ -55,7 +55,7 @@ public class OrphanPages extends Configured implements Tool {
             context.write(new IntWritable(source), new IntWritable(0));
             for (String targetStr : targets) {
                 Integer target = Integer.parseInt(targetStr);
-                if (target != source) {
+                if (!target.equals(source)) {
                     context.write(new IntWritable(target), new IntWritable(1));
                 }
             }
